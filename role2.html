@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Select Your Role</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px; margin: 0;">
+
+  <form style="max-width: 420px; margin: auto; background: #ffffff; padding: 20px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+
+    <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Your Job Role</h2>
+
+    <!-- Current Role Display -->
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 6px; font-weight: bold; color: #333;">
+        Current Role
+      </label>
+      <div style="padding: 10px; background-color: #eef3f8; border: 1px solid #ccc; border-radius: 4px; color: #333;">
+        Lineworker / Field Technician
+      </div>
+      <!-- Hidden field to preserve current role -->
+      <input type="hidden" name="current_role" value="lineworker">
+    </div>
+
+    <!-- New Role Selection -->
+    <label for="role" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">
+      Update Your Role (if needed)
+    </label>
+
+    <select id="role" name="role" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+      <option value="">-- Keep current role --</option>
+
+      <option value="lineworker">Lineworker / Field Technician</option>
+      <option value="substation_technician">Substation Technician</option>
+      <option value="metering_technician">Metering Technician</option>
+      <option value="operations_controller">Operations Controller / Dispatcher</option>
+      <option value="maintenance_planner">Maintenance Planner</option>
+      <option value="asset_manager">Asset Manager</option>
+      <option value="project_manager">Project Manager</option>
+      <option value="engineering_manager">Engineering Manager</option>
+      <option value="customer_service_rep">Customer Service Representative</option>
+      <option value="billing_specialist">Billing / Revenue Specialist</option>
+      <option value="health_safety_officer">Health & Safety Officer</option>
+      <option value="it_systems_admin">IT / Systems Administrator</option>
+    </select>
+
+    <button type="submit" style="width: 100%; padding: 12px; background-color: #005eb8; color: #fff; border: none; border-radius: 4px; font-size: 16px;">
+      Continue
+    </button>
+
+  </form>
+
+</body>
+</html>
