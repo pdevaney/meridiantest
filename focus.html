@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Select Focus Areas</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Arimo&display=swap');
+
+    body {
+      font-family: 'Arimo', Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding: 30px;
+      color: #333;
+    }
+
+    .form-card {
+      max-width: 720px;
+      margin: auto;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    h2 {
+      margin: 0 0 8px 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0 0 20px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .focus-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px 18px;
+      margin: 20px 0;
+    }
+
+    .focus-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+
+    button {
+      background-color: #CB370F;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 18px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 6px;
+      display: none;
+      font-size: 14px;
+    }
+
+    .status.info {
+      display: block;
+      background: #eef4ff;
+      border: 1px solid #b8d1ff;
+    }
+
+    .status.success {
+      display: block;
+      background: #edf8ed;
+      border: 1px solid #b9dfb9;
+    }
+
+    .status.error {
+      display: block;
+      background: #fff0f0;
+      border: 1px solid #e0b4b4;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="form-card">
+    <h2>Select Focus Areas</h2>
+    <p>Please select one or more focus areas, then submit the form.</p>
+
+    <form id="focusAreaForm">
+      <div id="focusAreas" class="focus-list"></div>
+
+      <button id="submitButton" type="submit" disabled>
+        Submit
+      </button>
+
+      <div id="statusMessage" class="status"></div>
+    </form>
+  </div>
+
+  <script>
+    const GET_FOCUS_AREAS_URL = "https://apim.workato.com/216271_meridianc/focus_areas-v1/get_focus_areas";
+
+    // Replace this with your actual submit recipe endpoint
+    const SUBMIT_FOCUS_AREAS_URL = "https://apim.workato.com/216271_meridianc/focus_areas-v1/submit_focus_areas";
+
+    // Avoid exposing this in production if possible
+    const API_TOKEN = "5bba275bebe09e2d81f165c9eefbbce9c0cbe457631e12be9e38499f123231d4";
+
+    const form = document.getElementById("focusAreaForm");
+    const focusAreasContainer = document.getElementById("focusAreas");
+    const submitButton = document.getElementById("submitButton");
+    const statusMessage = document.getElementById("statusMessage");
+
+    function showStatus(message, type) {
+      statusMessage.textContent = message;
+      statusMessage.className = "status " + type;
+    }
+
+    function getIframeParams() {
+      const params = new URLSearchParams(window.location.search);
+
+      return {
+        user_id: params.get("user_id") || "",
+        username: params.get("username") || "",
+        auth_code: params.get("auth_code") || "",
+        hash: params.get("hash") || "",
+        iframe_src: window.location.href
+      };
+    }
+
+    function buildBasePayload() {
+      return {
+        form_type: "focus_areas",
+        form_subtype: "select_focus_areas",
+        iframe_params: getIframeParams()
+      };
+    }
+
+    async function loadFocusAreas() {
+      showStatus("Loading focus areas...", "info");
+
+      try {
+        const response = await fetch(GET_FOCUS_AREAS_URL, {
+          method: "POST",
+          headers: {
+            "api-token": API_TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(buildBasePayload())
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== 0) {
+          throw new Error(result.message || "Unable to load focus areas.");
+        }
+
+        renderFocusAreas(result.focus_areas || []);
+        showStatus("Focus areas loaded. Please make your selection.", "success");
+
+      } catch (error) {
+        showStatus("Error loading focus areas: " + error.message, "error");
+      }
+    }
+
+    function renderFocusAreas(focusAreas) {
+      focusAreasContainer.innerHTML = "";
+
+      focusAreas
+        .sort((a, b) => Number(a.number) - Number(b.number))
+        .forEach(area => {
+          const label = document.createElement("label");
+          label.className = "focus-item";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.name = "focus_area";
+          checkbox.value = area.field_id;
+
+          checkbox.dataset.fieldId = area.field_id;
+          checkbox.dataset.name = (area.name || "").trim();
+          checkbox.dataset.number = area.number;
+
+          label.appendChild(checkbox);
+          label.appendChild(document.createTextNode((area.name || "").trim()));
+
+          focusAreasContainer.appendChild(label);
+        });
+
+      submitButton.disabled = focusAreas.length === 0;
+    }
+
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const selected = Array.from(document.querySelectorAll('input[name="focus_area"]:checked'))
+        .map(checkbox => ({
+          field_id: Number(checkbox.dataset.fieldId),
+          name: checkbox.dataset.name,
+          number: Number(checkbox.dataset.number)
+        }));
+
+      if (selected.length === 0) {
+        showStatus("Please select at least one focus area.", "error");
+        return;
+      }
+
+      const payload = {
+        ...buildBasePayload(),
+        selected_focus_areas: selected
+      };
+
+      submitButton.disabled = true;
+      showStatus("Sending request...", "info");
+
+      try {
+        const response = await fetch(SUBMIT_FOCUS_AREAS_URL, {
+          method: "POST",
+          headers: {
+            "api-token": API_TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== 0) {
+          throw new Error(result.message || "The request could not be submitted.");
+        }
+
+        showStatus("Thank you. Your focus areas have been submitted.", "success");
+
+      } catch (error) {
+        showStatus("Error submitting request: " + error.message, "error");
+        submitButton.disabled = false;
+      }
+    });
+
+    loadFocusAreas();
+  </script>
+
+</body>
+</html>
