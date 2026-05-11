@@ -120,7 +120,7 @@
     // Replace this with your actual submit recipe endpoint
     const SUBMIT_FOCUS_AREAS_URL = "https://apim.workato.com/216271_meridianc/focus_areas-v1/submit_focus_areas";
 
-    // Avoid exposing this in production if possible
+    // Put your Workato API token here
     const API_TOKEN = "5bba275bebe09e2d81f165c9eefbbce9c0cbe457631e12be9e38499f123231d4";
 
     const form = document.getElementById("focusAreaForm");
@@ -168,11 +168,14 @@
 
         const result = await response.json();
 
-        if (!response.ok || result.status !== 0) {
-          throw new Error(result.message || "Unable to load focus areas.");
+        const responseBody = result.response || result;
+
+        if (!response.ok || responseBody.status !== 0) {
+          throw new Error(responseBody.message || "Unable to load focus areas.");
         }
 
-        renderFocusAreas(result.focus_areas || []);
+        renderFocusAreas(responseBody.focus_areas || []);
+
         showStatus("Focus areas loaded. Please make your selection.", "success");
 
       } catch (error) {
@@ -193,6 +196,9 @@
           checkbox.type = "checkbox";
           checkbox.name = "focus_area";
           checkbox.value = area.field_id;
+
+          // This checks the box when the API returns checked: true
+          checkbox.checked = area.checked === true;
 
           checkbox.dataset.fieldId = area.field_id;
           checkbox.dataset.name = (area.name || "").trim();
@@ -241,9 +247,10 @@
         });
 
         const result = await response.json();
+        const responseBody = result.response || result;
 
-        if (!response.ok || result.status !== 0) {
-          throw new Error(result.message || "The request could not be submitted.");
+        if (!response.ok || responseBody.status !== 0) {
+          throw new Error(responseBody.message || "The request could not be submitted.");
         }
 
         showStatus("Thank you. Your focus areas have been submitted.", "success");
