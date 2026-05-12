@@ -166,18 +166,18 @@
           body: JSON.stringify(buildBasePayload())
         });
 
-        const result = await response.json();
+        const resultText = await response.text();
 
-        const responseBody = result.response || result;
+if (!response.ok) {
+  throw new Error(resultText || "The request could not be submitted.");
+}
 
-        if (!response.ok || responseBody.status !== 0) {
-          throw new Error(responseBody.message || "Unable to load focus areas.");
-        }
+if (resultText.trim().toUpperCase() !== "SUCCESS") {
+  throw new Error(resultText || "The request could not be submitted.");
+}
 
-        renderFocusAreas(responseBody.focus_areas || []);
-
-        showStatus("Focus areas loaded. Please make your selection.", "success");
-
+showStatus("Thank you. Your focus areas have been submitted.", "success");
+        
       } catch (error) {
         showStatus("Error loading focus areas: " + error.message, "error");
       }
