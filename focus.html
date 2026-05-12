@@ -327,11 +327,13 @@
         }
 
         showStatus(
-          resultBody && resultBody.Message
-            ? resultBody.Message
-            : "Thank you. Your focus areas have been submitted successfully.",
-          "success"
-        );
+  resultBody && resultBody.Message
+    ? resultBody.Message + ". You may change your selection and submit again if needed."
+    : "Thank you. Your focus areas have been submitted successfully. You may change your selection and submit again if needed.",
+  "success"
+);
+
+submitButton.disabled = false;
 
       } catch (error) {
         showStatus(
