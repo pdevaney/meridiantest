@@ -293,7 +293,6 @@
           body: JSON.stringify(payload)
         });
 
-        // Endpoint returns plain text: SUCCESS
         const resultText = await response.text();
 
         if (!response.ok) {
@@ -302,14 +301,35 @@
           );
         }
 
-        if (resultText.trim().toUpperCase() !== "SUCCESS") {
+        let resultBody = null;
+
+        try {
+          resultBody = JSON.parse(resultText);
+        } catch (e) {
+          resultBody = null;
+        }
+
+        const isSuccess =
+          resultText.trim().toUpperCase() === "SUCCESS" ||
+          (
+            resultBody &&
+            String(
+              resultBody.Status ||
+              resultBody.status ||
+              ""
+            ).toUpperCase() === "SUCCESS"
+          );
+
+        if (!isSuccess) {
           throw new Error(
             resultText || "The request could not be submitted."
           );
         }
 
         showStatus(
-          "Thank you. Your focus areas have been submitted successfully.",
+          resultBody && resultBody.Message
+            ? resultBody.Message
+            : "Thank you. Your focus areas have been submitted successfully.",
           "success"
         );
 
