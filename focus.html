@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Select Focus Areas</title>
 
   <style>
@@ -21,18 +22,21 @@
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
 
     h2 {
       margin: 0 0 8px 0;
       font-size: 22px;
       font-weight: 700;
+      color: #333;
     }
 
     p {
       margin: 0 0 20px 0;
       color: #666;
       font-size: 14px;
+      line-height: 1.5;
     }
 
     .focus-list {
@@ -47,11 +51,13 @@
       align-items: center;
       gap: 8px;
       font-size: 14px;
+      line-height: 1.4;
     }
 
     input[type="checkbox"] {
       width: 16px;
       height: 16px;
+      flex-shrink: 0;
     }
 
     button {
@@ -62,6 +68,7 @@
       padding: 12px 18px;
       font-size: 15px;
       cursor: pointer;
+      font-family: inherit;
     }
 
     button:disabled {
@@ -75,6 +82,7 @@
       border-radius: 6px;
       display: none;
       font-size: 14px;
+      line-height: 1.4;
     }
 
     .status.info {
@@ -96,7 +104,6 @@
     }
   </style>
 </head>
-
 <body>
 
   <div class="form-card">
@@ -115,18 +122,32 @@
   </div>
 
   <script>
-    const GET_FOCUS_AREAS_URL = "https://apim.workato.com/216271_meridianc/focus_areas-v1/get_focus_areas";
+    // ------------------------------------------------------------------
+    // Configuration
+    // ------------------------------------------------------------------
 
-    // Replace this with your actual submit recipe endpoint
-    const SUBMIT_FOCUS_AREAS_URL = "https://apim.workato.com/216271_meridianc/focus_areas-v1/apply_focus_areas";
+    const GET_FOCUS_AREAS_URL =
+      "https://apim.workato.com/216271_meridianc/focus_areas-v1/get_focus_areas";
 
-    // Put your Workato API token here
+    // Replace with your actual endpoint if different
+    const SUBMIT_FOCUS_AREAS_URL =
+      "https://apim.workato.com/216271_meridianc/focus_areas-v1/apply_focus_areas";
+
+    // Replace with your Workato API token
     const API_TOKEN = "5bba275bebe09e2d81f165c9eefbbce9c0cbe457631e12be9e38499f123231d4";
+
+    // ------------------------------------------------------------------
+    // DOM references
+    // ------------------------------------------------------------------
 
     const form = document.getElementById("focusAreaForm");
     const focusAreasContainer = document.getElementById("focusAreas");
     const submitButton = document.getElementById("submitButton");
     const statusMessage = document.getElementById("statusMessage");
+
+    // ------------------------------------------------------------------
+    // Utility functions
+    // ------------------------------------------------------------------
 
     function showStatus(message, type) {
       statusMessage.textContent = message;
@@ -153,6 +174,10 @@
       };
     }
 
+    // ------------------------------------------------------------------
+    // Load focus areas from Workato
+    // ------------------------------------------------------------------
+
     async function loadFocusAreas() {
       showStatus("Loading focus areas...", "info");
 
@@ -166,22 +191,33 @@
           body: JSON.stringify(buildBasePayload())
         });
 
-        const resultText = await response.text();
+        const result = await response.json();
+        const responseBody = result.response || result;
 
-if (!response.ok) {
-  throw new Error(resultText || "The request could not be submitted.");
-}
+        if (!response.ok || responseBody.status !== 0) {
+          throw new Error(
+            responseBody.message || "Unable to load focus areas."
+          );
+        }
 
-if (resultText.trim().toUpperCase() !== "SUCCESS") {
-  throw new Error(resultText || "The request could not be submitted.");
-}
+        renderFocusAreas(responseBody.focus_areas || []);
 
-showStatus("Thank you. Your focus areas have been submitted.", "success");
-        
+        showStatus(
+          "Focus areas loaded. Please make your selection.",
+          "success"
+        );
+
       } catch (error) {
-        showStatus("Error loading focus areas: " + error.message, "error");
+        showStatus(
+          "Error loading focus areas: " + error.message,
+          "error"
+        );
       }
     }
+
+    // ------------------------------------------------------------------
+    // Render checkbox list
+    // ------------------------------------------------------------------
 
     function renderFocusAreas(focusAreas) {
       focusAreasContainer.innerHTML = "";
@@ -197,15 +233,18 @@ showStatus("Thank you. Your focus areas have been submitted.", "success");
           checkbox.name = "focus_area";
           checkbox.value = area.field_id;
 
-          // This checks the box when the API returns checked: true
+          // Pre-check if the API returned checked: true
           checkbox.checked = area.checked === true;
 
+          // Store values for submission
           checkbox.dataset.fieldId = area.field_id;
           checkbox.dataset.name = (area.name || "").trim();
           checkbox.dataset.number = area.number;
 
           label.appendChild(checkbox);
-          label.appendChild(document.createTextNode((area.name || "").trim()));
+          label.appendChild(
+            document.createTextNode((area.name || "").trim())
+          );
 
           focusAreasContainer.appendChild(label);
         });
@@ -213,18 +252,26 @@ showStatus("Thank you. Your focus areas have been submitted.", "success");
       submitButton.disabled = focusAreas.length === 0;
     }
 
+    // ------------------------------------------------------------------
+    // Submit selected focus areas
+    // ------------------------------------------------------------------
+
     form.addEventListener("submit", async function(event) {
       event.preventDefault();
 
-      const selected = Array.from(document.querySelectorAll('input[name="focus_area"]:checked'))
-        .map(checkbox => ({
-          field_id: Number(checkbox.dataset.fieldId),
-          name: checkbox.dataset.name,
-          number: Number(checkbox.dataset.number)
-        }));
+      const selected = Array.from(
+        document.querySelectorAll('input[name="focus_area"]:checked')
+      ).map(checkbox => ({
+        field_id: Number(checkbox.dataset.fieldId),
+        name: checkbox.dataset.name,
+        number: Number(checkbox.dataset.number)
+      }));
 
       if (selected.length === 0) {
-        showStatus("Please select at least one focus area.", "error");
+        showStatus(
+          "Please select at least one focus area.",
+          "error"
+        );
         return;
       }
 
@@ -246,20 +293,40 @@ showStatus("Thank you. Your focus areas have been submitted.", "success");
           body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
-        const responseBody = result.response || result;
+        // Endpoint returns plain text: SUCCESS
+        const resultText = await response.text();
 
-        if (!response.ok || responseBody.status !== 0) {
-          throw new Error(responseBody.message || "The request could not be submitted.");
+        if (!response.ok) {
+          throw new Error(
+            resultText || "The request could not be submitted."
+          );
         }
 
-        showStatus("Thank you. Your focus areas have been submitted.", "success");
+        if (resultText.trim().toUpperCase() !== "SUCCESS") {
+          throw new Error(
+            resultText || "The request could not be submitted."
+          );
+        }
+
+        showStatus(
+          "Thank you. Your focus areas have been submitted successfully.",
+          "success"
+        );
 
       } catch (error) {
-        showStatus("Error submitting request: " + error.message, "error");
+        showStatus(
+          "Error submitting request: " + error.message,
+          "error"
+        );
+
+        // Allow the user to try again
         submitButton.disabled = false;
       }
     });
+
+    // ------------------------------------------------------------------
+    // Initialise
+    // ------------------------------------------------------------------
 
     loadFocusAreas();
   </script>
